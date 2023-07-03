@@ -1,0 +1,100 @@
+---
+title: "PA1_template"
+output: html_document
+date: "2023-07-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading and Preprocessing the Data
+
+```{r}
+dat = read.csv("activity.csv")
+dat$date = as.Date(dat$date, format = "%Y-%m-%d")
+```
+
+## What is mean total number of steps taken per day?
+
+```{r, echo = FALSE}
+h = aggregate(dat$steps, list(dat$date), FUN = sum, na.rm=TRUE)
+barplot(h$x,
+        xlab = "Days",
+        ylab = "Total Steps Taken",
+        names.arg = h$Group.1,
+        main = "Total Steps Taken per Day",
+        col = h$Group.1)
+print("Mean of steps across all days:")
+mean(h$x)
+print("Median of steps across all days:")
+median(h$x)
+
+```
+
+## What is the average daily activity pattern?
+
+```{r, echo = FALSE}
+m = aggregate(dat$steps, list(dat$interval), FUN = mean, na.rm=TRUE)
+plot(m$Group.1, m$x, type = "l", col = "blue", lwd = 2,
+     main = "Average Number of Steps per 5-Minute Interval",
+     xlab = "5-Minute Interval",
+     ylab = "Average Number of Steps")
+
+
+```
+
+## Imputing Missing values
+
+```{r, echo = FALSE}
+imputed = dat
+for (i in 1:dim(dat)[1]){
+  if (is.na(imputed$steps[i])){
+    y = imputed$interval[i]
+    imputed$steps[i] = m[m$Group.1 == y, ]$x
+  } 
+}
+imp = aggregate(imputed$steps, list(as.Date(imputed$date)), FUN = sum, na.rm=TRUE)
+barplot(imp$x,
+        xlab = "Days",
+        ylab = "Total Steps Taken",
+        names.arg = imp$Group.1,
+        main = "Total Steps Taken per Day",
+        col = imp$Group.1) 
+print("Mean of steps across all days:")
+mean(imp$x)
+print("Median of steps across all days:")
+median(imp$x)
+
+
+```
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+```{r, echo = FALSE}
+imputed$day = weekdays(imputed$date)
+imputed$daycat = "Weekday"
+imputed[imputed$day == "Saturday" | imputed$day == "Sunday", ]$daycat = "Weekend"
+imputed$daycat = factor(imputed$daycat)
+
+weekday = imputed[imputed$daycat == "Weekday", ]
+weekend = imputed[imputed$daycat == "Weekend", ]
+wday = aggregate(weekday$steps, list(weekday$interval), FUN = mean, na.rm=TRUE)
+wend = aggregate(weekend$steps, list(weekend$interval), FUN = mean, na.rm=TRUE)
+
+par(mfrow = c(2,1))
+plot(wday$Group.1, wday$x, type = "l", col = "blue", lwd = 2,
+     main = "Average Number of Steps per 5-Minute Interval for Weekdays",
+     xlab = "5-Minute Interval",
+     ylab = "Average Number of Steps")
+plot(wend$Group.1, wend$x, type = "l", col = "red", lwd = 2,
+     main = "Average Number of Steps per 5-Minute Interval for Weekends",
+     xlab = "5-Minute Interval",
+     ylab = "Average Number of Steps")
+
+print("Mean for weekdays:")
+mean(wday$x)
+print("Mean for weekends:")
+mean(wend$x)
+
+```
